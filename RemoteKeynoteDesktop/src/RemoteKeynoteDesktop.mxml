@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="onAppReady(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			private const GROUP_ID:String = "RemoteKeynote";
+			private const MULTICASE_IP:String = "239.254.254.1:30303";
+			private var nc:NetConnection;
+			private var netGroup:NetGroup;
+			private var isConnected:Boolean = false;
+			
+			protected function onAppReady(event:FlexEvent):void
+			{
+				initConnection();
+			}
+			
+			protected function initConnection():void
+			{
+				// init p2p connection
+				nc = new NetConnection;
+				nc.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus, false, 0, true);
+				nc.connect("rtmfp:");
+			}
+			
+			protected function onNetStatus(event:NetStatusEvent):void
+			{
+				switch (event.info.code)
+				{
+					case "NetConnection.Connect.Success":
+						txt.text += "\nNetConnection.Connect.Success";
+						setupGroup();
+						break;
+					
+					case "NetGroup.Connect.Success":
+						txt.text += "\nNetGroup.Connect.Success";
+						isConnected = true;
+						break;
+					
+					case "NetGroup.SendTo.Notify":
+						var data:Object = event.info.message;
+						txt.text += "\n" + data.toString();
+						break;
+				}
+			}
+			
+			private function setupGroup():void
+			{
+				var gs:GroupSpecifier = new GroupSpecifier(GROUP_ID);
+				gs.ipMulticastMemberUpdatesEnabled = true;
+				gs.multicastEnabled = true;
+				gs.postingEnabled = true;
+				gs.routingEnabled = true;
+				gs.addIPMulticastAddress(MULTICASE_IP);
+				
+				netGroup = new NetGroup(nc, gs.groupspecWithAuthorizations());
+				netGroup.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus, false, 0, true);
+			}
+			
+			private function sendMsg(val:Object):void
+			{
+				if (isConnected) netGroup.sendToAllNeighbors(val);
+			}
+			
+			protected function onSend(event:MouseEvent):void
+			{
+				sendMsg("hello");
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:TextArea id="txt" width="100%" height="500"/>
+	
+	<s:Button x="10" y="508" label="Connect"/>
+	<s:Button x="135" y="508" label="Send" click="onSend(event)"/>
+</s:WindowedApplication>

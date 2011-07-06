@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   creationComplete="onAppReady(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.larryzzl.flex.remotekeynote.controller.ApplicationController;
+			import com.larryzzl.flex.remotekeynote.controller.Logger;
+			import com.larryzzl.flex.remotekeynote.events.ApplicationEvent;
+			import com.larryzzl.flex.remotekeynote.events.EventCenter;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var appController:ApplicationController = ApplicationController.inst;
+			[Bindable]
+			private var logger:Logger = Logger.inst;
+			private var eventCenter:EventCenter = EventCenter.inst;
+			
+			protected function onAppReady(event:FlexEvent):void
+			{
+				// set up connection
+				eventCenter.addEventListener(ApplicationEvent.CONNECT_TO_SERVER_DONE, onServerConnected, false, 0, true);
+				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.CONNECT_TO_SERVER));
+			}
+			
+			protected function onServerConnected(event:ApplicationEvent):void
+			{
+				
+			}
+			
+			protected function onExit():void
+			{
+				NativeApplication.nativeApplication.exit();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:VGroup id="mainFrame" x="0" y="0" width="100%" height="100%" gap="0" horizontalAlign="center">
+		<s:HGroup width="100%" height="{mainFrame.height - controlPanel.height}">
+			<s:HGroup width="50%" height="100%">
+				
+			</s:HGroup>
+			<s:HGroup width="50%" height="100%">
+				
+			</s:HGroup>
+		</s:HGroup>
+		
+		<s:HGroup id="controlPanel" width="100%" height="100" gap="0">
+			<s:TileGroup width="50%" height="100%">
+				<s:Button label="Connect"
+						  visible="{appController.isConnected}"
+						  includeInLayout="{appController.isConnected}"/>
+				<s:Button label="Exit" click="onExit()"/>
+			</s:TileGroup>
+			<s:HGroup width="50%" height="100%">
+				<s:List dataProvider="{logger.logs}" width="100%" height="100%"/>
+			</s:HGroup>
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:Application>
