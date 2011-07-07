@@ -1,6 +1,7 @@
 package com.larryzzl.flex.remotekeynote.events
 {
 	import flash.display.BitmapData;
+	import flash.utils.ByteArray;
 
 	public class SlideEvent extends BasicEvent
 	{
@@ -13,10 +14,14 @@ package com.larryzzl.flex.remotekeynote.events
 		public static const CURRENT_SLIDE_UPDATED:String = "CURRENT_SLIDE_UPDATED";
 		
 		public static const RESET_SLIDE:String = "RESET_SLIDE";
+		public static const SLIDE_INFO_UPDATE:String = "SLIDE_INFO_UPDATE";
 		
-		public var slideContent:BitmapData;
+		public var slideContent:ByteArray;
+		public var slideBitmapData:BitmapData;
 		public var slideText:String;
 		public var slideIndex:int;
+		public var slideInfo:Object;
+		public var totalSlide:int;
 		
 		public function SlideEvent(type:String)
 		{

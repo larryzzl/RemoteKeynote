@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark"
-			   creationComplete="onAppReady(event)">
+			   creationComplete="onAppReady(event)"
+			   gestureSwipe="onScreenSwip(event)">
 	<fx:Script>
 		<![CDATA[
 			import com.larryzzl.flex.remotekeynote.controller.ApplicationController;
 			import com.larryzzl.flex.remotekeynote.controller.Logger;
 			import com.larryzzl.flex.remotekeynote.events.ApplicationEvent;
 			import com.larryzzl.flex.remotekeynote.events.EventCenter;
+			import com.larryzzl.flex.remotekeynote.events.SlideEvent;
+			import com.larryzzl.flex.remotekeynote.utils.TimeUtils;
+			
+			import flash.utils.getTimer;
+			
+			import flashx.textLayout.conversion.TextConverter;
 			
 			import mx.events.FlexEvent;
 			
@@ -17,11 +24,31 @@
 			private var logger:Logger = Logger.inst;
 			private var eventCenter:EventCenter = EventCenter.inst;
 			
+			[Bindable]
+			private var showLogWnd:Boolean = false;
+			[Bindable]
+			private var slideTimer:String = "N / N";
+			[Bindable]
+			private var slideCount:String = "N / N";
+			
+			private var slideStartTime:int = 0;
+			private var curSlideStartTime:int = 0;
+			private var slideTimeCheckTimer:Timer;
+			
 			protected function onAppReady(event:FlexEvent):void
 			{
+				slideTimeCheckTimer = new Timer(1000);
+				slideTimeCheckTimer.addEventListener(TimerEvent.TIMER, onSlideCheckTimer, false, 0, true);
+				
 				// set up connection
 				eventCenter.addEventListener(ApplicationEvent.CONNECT_TO_SERVER_DONE, onServerConnected, false, 0, true);
+				eventCenter.addEventListener(SlideEvent.CURRENT_SLIDE_UPDATED, onCurrentSlideUpdated, false, 0, true);
+				eventCenter.addEventListener(SlideEvent.RESET_SLIDE, onSlideReset, false, 0, true);
+				
 				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.CONNECT_TO_SERVER));
+				
+				// set up touch event
+				Multitouch.inputMode = MultitouchInputMode.GESTURE;
 			}
 			
 			protected function onServerConnected(event:ApplicationEvent):void
@@ -31,7 +58,72 @@
 			
 			protected function onExit():void
 			{
+				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.COMMAND_SLIDE_EXIT_APP));
+				var t:Timer = new Timer(500);
+				t.addEventListener(TimerEvent.TIMER, onExitTimer, false, 0, true);
+				t.start();
+			}
+			
+			protected function onExitTimer(e:TimerEvent):void
+			{
 				NativeApplication.nativeApplication.exit();
+			}
+			
+			protected function onConnect():void
+			{
+				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.SEND_HAND_SHAKE));
+			}
+			
+			protected function onScreenSwip(event:TransformGestureEvent):void
+			{
+				if (event.offsetX == 1)
+				{
+					eventCenter.dispatchEvent(new SlideEvent(SlideEvent.SLIDE_TO_PREVIOUS));
+				}
+				else if (event.offsetX == -1)
+				{
+					eventCenter.dispatchEvent(new SlideEvent(SlideEvent.SLIDE_TO_NEXT));
+				}
+			}
+			
+			protected function onLeftTouchPanelClick(event:MouseEvent):void
+			{
+				eventCenter.dispatchEvent(new SlideEvent(SlideEvent.SLIDE_TO_PREVIOUS));
+			}
+			
+			protected function onRightTouchPanelClick(event:MouseEvent):void
+			{
+				eventCenter.dispatchEvent(new SlideEvent(SlideEvent.SLIDE_TO_NEXT));
+			}
+			
+			protected function onCurrentSlideUpdated(event:SlideEvent):void
+			{
+				slideCount = (event.slideIndex + 1) + " / " + event.totalSlide;
+				slideTextArea.textFlow = TextConverter.importToFlow(event.slideText, TextConverter.TEXT_FIELD_HTML_FORMAT);
+				slideContentArea.source = event.slideBitmapData;
+				
+				if (slideStartTime == 0)
+				{
+					slideStartTime = getTimer();
+					slideTimeCheckTimer.start();
+				}
+				curSlideStartTime = getTimer();
+			}
+			
+			protected function onSlideCheckTimer(event:TimerEvent):void
+			{
+				if (slideStartTime > 0)
+				{
+					var t:int = getTimer();
+					var slideStartTimeDiff:int = t - slideStartTime;
+					var curSlideTimeDiff:int = t - curSlideStartTime;
+					slideTimer = TimeUtils.ms2TimeString(curSlideTimeDiff) + " / " + TimeUtils.ms2TimeString(slideStartTimeDiff);
+				}
+			}
+			
+			protected function onSlideReset(event:Event):void
+			{
+				slideStartTime = 0;
 			}
 			
 		]]>
@@ -42,25 +134,40 @@
 	
 	<s:VGroup id="mainFrame" x="0" y="0" width="100%" height="100%" gap="0" horizontalAlign="center">
 		<s:HGroup width="100%" height="{mainFrame.height - controlPanel.height}">
-			<s:HGroup width="50%" height="100%">
-				
-			</s:HGroup>
-			<s:HGroup width="50%" height="100%">
-				
-			</s:HGroup>
+			<s:BitmapImage id="slideContentArea" width="50%" height="100%" fillMode="scale"/>
+			<s:RichText id="slideTextArea" width="50%" height="100%"/>
 		</s:HGroup>
 		
 		<s:HGroup id="controlPanel" width="100%" height="100" gap="0">
-			<s:TileGroup width="50%" height="100%">
-				<s:Button label="Connect"
-						  visible="{appController.isConnected}"
-						  includeInLayout="{appController.isConnected}"/>
+			<s:BorderContainer width="50%" height="100%" backgroundColor="0xF0F0F0">
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center" gap="20"/>
+				</s:layout>
+				<s:Button label="Connect" click="onConnect()"/>
 				<s:Button label="Exit" click="onExit()"/>
-			</s:TileGroup>
-			<s:HGroup width="50%" height="100%">
-				<s:List dataProvider="{logger.logs}" width="100%" height="100%"/>
-			</s:HGroup>
+				<s:Button label="Log Window" click="{showLogWnd = !showLogWnd}"/>
+			</s:BorderContainer>
+			<s:BorderContainer width="50%" height="100%" backgroundColor="0xF0F0F0">
+				<s:layout>
+					<s:HorizontalLayout/>
+				</s:layout>
+				<s:List dataProvider="{logger.logs}" width="100%" height="100%"
+						visible="{showLogWnd}" includeInLayout="{showLogWnd}"/>
+				<s:VGroup width="100%" height="100%" gap="20"
+						  verticalAlign="middle" horizontalAlign="center"
+						  visible="{!showLogWnd}" includeInLayout="{!showLogWnd}">
+					<s:Label fontSize="20" text="Slide Timer: {slideTimer}"/>
+					<s:Label fontSize="20" text="Slide Count: {slideCount}"/>
+				</s:VGroup>
+			</s:BorderContainer>
 		</s:HGroup>
 	</s:VGroup>
+	
+	<s:Group id="leftTouchPanel" x="0" y="0"
+			 width="100" height="{this.height - controlPanel.height}"
+			 click="onLeftTouchPanelClick(event)"/>
+	<s:Group id="rightTouchPanel" right="0" y="0"
+			 width="100" height="{this.height - controlPanel.height}"
+			 click="onRightTouchPanelClick(event)"/>
 	
 </s:Application>
