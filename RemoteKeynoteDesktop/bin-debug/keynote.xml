@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <remote_keynote>
-	<version>0.1.0</version>
 	<keynote_info>
+		<version>0.1.0</version>
 		<author>Zunlin Zhang</author>
-		<create_data></create_data>
-		<update_data></update_data>
+		<create_date></create_date>
+		<update_date></update_date>
 	</keynote_info>
 	<keynotes>
 		<keynote enable="true" transition="fade">

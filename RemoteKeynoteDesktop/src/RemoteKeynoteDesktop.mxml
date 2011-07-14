@@ -11,6 +11,8 @@
 			import com.larryzzl.flex.remotekeynote.events.ApplicationEvent;
 			import com.larryzzl.flex.remotekeynote.events.EventCenter;
 			import com.larryzzl.flex.remotekeynote.events.SlideEvent;
+			import com.larryzzl.flex.remotekeynote.kre.Keynote;
+			import com.larryzzl.flex.remotekeynote.kre.KeynoteEvent;
 			
 			import mx.events.FlexEvent;
 			import mx.graphics.codec.PNGEncoder;
@@ -77,6 +79,30 @@
 				eventCenter.dispatchEvent(new SlideEvent(SlideEvent.RESET_SLIDE));
 			}
 			
+			protected function onLoadKeynote(event:MouseEvent):void
+			{
+				// for test only
+				var url:String = "file:///D:/Personal/PersonalProject/GitHub/RemoteKeynote/RemoteKeynoteDesktop/bin-debug";
+				var keynote:Keynote = new Keynote(url);
+				keynote.addEventListener(KeynoteEvent.KEYNOTE_STATE_CHANGE, onKeynoteStateChange);
+				
+				return;
+				var f:File = new File;
+				f.addEventListener(Event.SELECT, onDirSelect, false, 0, true);
+				f.browseForDirectory("Choose Keynote Directory");
+			}
+			
+			protected function onDirSelect(event:Event):void
+			{
+				var f:File = event.target as File;
+				logger.fine("Open keynote @: " + f.url);
+			}
+			
+			protected function onKeynoteStateChange(event:KeynoteEvent):void
+			{
+				logger.fine("onKeynoteStateChange: " + event.keynoteState);
+			}
+			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -91,8 +117,9 @@
 		<s:Label id="lbCount" color="#FFFFFF" fontSize="36" text="{fakeSlideCount}"/>
 	</s:BorderContainer>
 	
-	<s:Button x="531" y="322" width="141" height="72" label="Send Slide Init" click="onSendFakeInit(event)"/>
-	<s:Button x="701" y="324" width="133" height="72" label="Send Fake Data" click="onSendFakeData(event)" enabled="{fakeSlideCount != totalFakeCount}"/>
-	<s:Button x="861" y="324" width="141" height="72" label="Reset" click="onReset(event)"/>
+	<s:Button x="531" y="322" width="113" height="72" label="Send Slide Init" click="onSendFakeInit(event)"/>
+	<s:Button x="650" y="321" width="115" height="72" label="Send Fake Data" click="onSendFakeData(event)" enabled="{fakeSlideCount != totalFakeCount}"/>
+	<s:Button x="773" y="321" width="73" height="72" label="Reset" click="onReset(event)"/>
+	<s:Button x="854" y="321" width="106" height="72" label="Load Keynote" click="onLoadKeynote(event)"/>
 
 </s:WindowedApplication>
