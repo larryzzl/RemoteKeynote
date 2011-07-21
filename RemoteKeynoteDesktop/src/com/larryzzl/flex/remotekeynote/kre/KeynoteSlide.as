@@ -1,6 +1,7 @@
 package com.larryzzl.flex.remotekeynote.kre
 {
 	import flash.display.Bitmap;
+	import flash.display.DisplayObject;
 	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.net.URLRequest;
@@ -38,6 +39,11 @@ package com.larryzzl.flex.remotekeynote.kre
 		public function get state():int
 		{
 			return keynoteSlideState;
+		}
+		
+		public function get renderResult():DisplayObject
+		{
+			return loader;
 		}
 		
 		protected function onSlideBackgroundLoaded(event:Event):void

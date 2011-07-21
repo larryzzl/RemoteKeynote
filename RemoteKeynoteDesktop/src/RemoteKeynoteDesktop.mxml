@@ -2,10 +2,11 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   width="1024" height="600"
+					   width="1024" height="600" frameRate="30"
 					   creationComplete="onAppReady(event)">
 	<fx:Script>
 		<![CDATA[
+
 			import com.larryzzl.flex.remotekeynote.controller.ApplicationController;
 			import com.larryzzl.flex.remotekeynote.controller.Logger;
 			import com.larryzzl.flex.remotekeynote.events.ApplicationEvent;
@@ -13,7 +14,9 @@
 			import com.larryzzl.flex.remotekeynote.events.SlideEvent;
 			import com.larryzzl.flex.remotekeynote.kre.Keynote;
 			import com.larryzzl.flex.remotekeynote.kre.KeynoteEvent;
+			import com.larryzzl.flex.remotekeynote.kre.KeynoteRenderEngine;
 			
+			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.graphics.codec.PNGEncoder;
 			
@@ -27,12 +30,21 @@
 			[Bindable]
 			private var totalFakeCount:int = 10;
 			
+			private var uc:UIComponent;
+			private var kre:KeynoteRenderEngine;
+			
 			protected function onAppReady(event:FlexEvent):void
 			{
 				// set up connection
 				eventCenter.addEventListener(ApplicationEvent.CLIENT_CONNECTED, onClientConnected, false, 0, true);
 				eventCenter.addEventListener(ApplicationEvent.EXIT_APP, onExitApp, false, 0, true);
 				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.SETUP_CONNECTION));
+				
+				uc = new UIComponent;
+				uc.percentHeight = 100;
+				uc.percentWidth = 100;
+				ca.addChild(uc);
+				
 			}
 			
 			protected function onClientConnected(event:Event):void
@@ -86,6 +98,11 @@
 				var keynote:Keynote = new Keynote(url);
 				keynote.addEventListener(KeynoteEvent.KEYNOTE_STATE_CHANGE, onKeynoteStateChange);
 				
+				uc.width = ca.width;
+				uc.height = ca.height;
+				kre = new KeynoteRenderEngine(keynote, uc);
+				kre.start();
+				
 				return;
 				var f:File = new File;
 				f.addEventListener(Event.SELECT, onDirSelect, false, 0, true);
@@ -103,13 +120,25 @@
 				logger.fine("onKeynoteStateChange: " + event.keynoteState);
 			}
 			
+			protected function onNext(event:MouseEvent):void
+			{
+				if (kre) kre.next();
+			}
+			
+			protected function onPrevious(event:MouseEvent):void
+			{
+				if (kre) kre.previous();
+			}
+			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	
-	<s:List dataProvider="{logger.logs}" width="50%" height="100%"/>
+	<s:List dataProvider="{logger.logs}" width="50%" height="50%"/>
+	<s:SpriteVisualElement id="ca" bottom="0" width="50%" height="50%">
+	</s:SpriteVisualElement>
 	<s:BorderContainer id="fakeSlideContent" width="50%" height="50%" right="0" backgroundColor="0xff8000">
 		<s:layout>
 			<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
@@ -121,5 +150,7 @@
 	<s:Button x="650" y="321" width="115" height="72" label="Send Fake Data" click="onSendFakeData(event)" enabled="{fakeSlideCount != totalFakeCount}"/>
 	<s:Button x="773" y="321" width="73" height="72" label="Reset" click="onReset(event)"/>
 	<s:Button x="854" y="321" width="106" height="72" label="Load Keynote" click="onLoadKeynote(event)"/>
+	<s:Button x="531" y="402" width="86" height="54" label="next" click="onNext(event)"/>
+	<s:Button x="625" y="401" width="92" height="55" label="previous" click="onPrevious(event)"/>
 
 </s:WindowedApplication>

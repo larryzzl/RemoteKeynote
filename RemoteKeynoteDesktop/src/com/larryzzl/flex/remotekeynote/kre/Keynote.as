@@ -67,16 +67,26 @@ package com.larryzzl.flex.remotekeynote.kre
 			return _notes;
 		}
 		
-		public function get versioin():String
+		public function get version():String
 		{
 			return _version;
+		}
+		
+		public function get size():int
+		{
+			return slides.length;
+		}
+		
+		public function get curIndex():int
+		{
+			return curSlideIndex;
 		}
 		
 		public function loadKeynote():void
 		{
 			if (keynoteState == KEYNOTE_STATE_IDLE)
 			{
-				keynoteState = KEYNOTE_STATE_BUFFER;
+				updateKeynoteState(KEYNOTE_STATE_BUFFER);
 				generateKeynotSlides();
 			}
 		}
@@ -87,6 +97,8 @@ package com.larryzzl.flex.remotekeynote.kre
 			
 			curSlideIndex++;
 			prepareSlides();
+			
+			return true;
 		}
 		
 		public function previousSlide():Boolean
@@ -95,6 +107,8 @@ package com.larryzzl.flex.remotekeynote.kre
 			
 			curSlideIndex--;
 			prepareSlides();
+			
+			return true;
 		}
 		
 		public function getCurrentSlide():KeynoteSlide
@@ -107,6 +121,15 @@ package com.larryzzl.flex.remotekeynote.kre
 			return (curSlideIndex == slides.length - 1) ? null : slides[curSlideIndex + 1];
 		}
 		
+		private function updateKeynoteState(val:int):void
+		{
+			if (keynoteState != val)
+			{
+				keynoteState = val;
+				dispatchStateChangeEvent();
+			}
+		}
+		
 		private function generateKeynotSlides():void
 		{
 			cleanup();
@@ -115,8 +138,7 @@ package com.larryzzl.flex.remotekeynote.kre
 			keynoteFile = new File(mixKeynoteFileName(rootUrl, KEYNOTE_FILE_NAME));
 			if (keynoteFile.exists == false)
 			{
-				keynoteState = KEYNOTE_STATE_ERROR;
-				dispatchStateChangeEvent();
+				updateKeynoteState(KEYNOTE_STATE_ERROR);
 				return;
 			}
 			
@@ -187,9 +209,8 @@ package com.larryzzl.flex.remotekeynote.kre
 		
 		private function playReady(ready:Boolean):void
 		{
-			keynoteState = ready ? KEYNOTE_STATE_READY : KEYNOTE_STATE_BUFFER;
 			logger.fine("Slide ready: " + ready);
-			dispatchStateChangeEvent();
+			updateKeynoteState(ready ? KEYNOTE_STATE_READY : KEYNOTE_STATE_BUFFER);
 		}
 		
 		private function parseKeynoteInfo(val:Object):void
@@ -247,7 +268,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		public function dispose():void
 		{
 			cleanup();
-			keynoteState = KEYNOTE_STATE_IDLE;
+			updateKeynoteState(KEYNOTE_STATE_IDLE);
 		}
 		
 		private function cleanup():void

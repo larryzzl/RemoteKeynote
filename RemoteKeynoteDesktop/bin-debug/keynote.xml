@@ -15,7 +15,7 @@
 			<background_image>image_2.jpg</background_image>
 			<notes>note for keynote 2</notes>
 		</keynote>
-		<keynote enable="true" transition="slide3d">
+		<keynote enable="true" transition="fade">
 			<background_image>image_3.jpg</background_image>
 			<notes>note for keynote 3</notes>
 		</keynote>
