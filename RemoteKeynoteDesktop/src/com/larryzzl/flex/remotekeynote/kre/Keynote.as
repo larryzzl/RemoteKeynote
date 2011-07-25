@@ -1,6 +1,8 @@
 package com.larryzzl.flex.remotekeynote.kre
 {
 	import com.larryzzl.flex.remotekeynote.controller.Logger;
+	import com.larryzzl.flex.remotekeynote.events.EventCenter;
+	import com.larryzzl.flex.remotekeynote.events.SlideEvent;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -17,7 +19,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		public static const KEYNOTE_STATE_ERROR:int = 3;
 		
 		private static const KEYNOTE_FILE_NAME:String = "keynote.xml";
-		private static const SLIDE_LOAD_BUFFER_LENGTH:int = 2;
+		private static const SLIDE_LOAD_BUFFER_LENGTH:int = 3;
 		
 		private var rootUrl:String;
 		private var _author:String;
@@ -29,6 +31,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		private var slides:Vector.<KeynoteSlide>;
 		private var keynoteFile:File;
 		private var curSlideIndex:int = 0;
+		private var loadedSlideIndex:int = -1;
 		
 		private var keynoteState:int = KEYNOTE_STATE_IDLE;
 		
@@ -160,24 +163,43 @@ package com.larryzzl.flex.remotekeynote.kre
 			var keynotes:Array = arrayGenerator(keynote.remote_keynote.keynotes.keynote);
 			parseKeynoteSlides(keynotes);
 			
+			loadedSlideIndex = -1;
+			curSlideIndex = 0;
 			prepareSlides();
 		}
 		
 		private function prepareSlides():void
 		{
-			for (var i:int = 0; i < SLIDE_LOAD_BUFFER_LENGTH; ++i)
+			updateKeynoteState(KEYNOTE_STATE_BUFFER);
+			if (loadedSlideIndex + 1 < slides.length)
 			{
-				if (slides.length > curSlideIndex + i)
-				{
-					slides[curSlideIndex + i].loadSlide(slideLoadDoneCallback);
-				}
+				slides[loadedSlideIndex + 1].loadSlide(slideLoadDoneCallback);
+			}
+			else
+			{
+				checkIfSlideReady();
 			}
 		}
 		
 		private function slideLoadDoneCallback(slide:KeynoteSlide):void
 		{
 			logger.fine("Slide " + slide.slideIndex + " is loaded, success: " + (slide.state != KeynoteSlide.KEYNOTE_SLIDE_STATE_ERROR));
+			
+			loadedSlideIndex = slide.slideIndex;
+			var e:SlideEvent = new SlideEvent(SlideEvent.SLIDE_LOADED);
+			e.slideIndex = slide.slideIndex;
+			e.slide = slide;
+			EventCenter.inst.dispatchEvent(e);
+			
 			checkIfSlideReady();
+			
+			if (SLIDE_LOAD_BUFFER_LENGTH + curSlideIndex > loadedSlideIndex)
+			{
+				if (loadedSlideIndex + 1 < slides.length)
+				{
+					slides[loadedSlideIndex + 1].loadSlide(slideLoadDoneCallback);
+				}
+			}
 		}
 		
 		private function checkIfSlideReady():void
@@ -250,6 +272,10 @@ package com.larryzzl.flex.remotekeynote.kre
 														slide.enable);
 				slides.push(sks);
 			}
+			
+			var e:SlideEvent = new SlideEvent(SlideEvent.UPDATE_SLIDE_INFO);
+			e.totalSlideNumber = slides.length;
+			EventCenter.inst.dispatchEvent(e);
 		}
 		
 		private function mixKeynoteFileName(rootPath:String, name:String):String

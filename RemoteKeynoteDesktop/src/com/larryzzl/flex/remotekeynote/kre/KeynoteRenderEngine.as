@@ -5,6 +5,7 @@ package com.larryzzl.flex.remotekeynote.kre
 	
 	import com.larryzzl.flex.remotekeynote.controller.Logger;
 	
+	import flash.display.DisplayObject;
 	import flash.events.Event;
 	
 	import mx.core.UIComponent;
@@ -20,6 +21,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		private var nextSlide:KeynoteSlide;
 		
 		private var isWaittingForNextSlide:Boolean = true;
+		private var isSlideAnimating:Boolean = false;
 		
 		private var logger:Logger = Logger.inst;
 		
@@ -39,6 +41,8 @@ package com.larryzzl.flex.remotekeynote.kre
 		
 		public function next():void
 		{
+			if (isSlideAnimating == true) return;
+			
 			if (nextSlide != null)
 			{
 				switch (nextSlide.transitionType)
@@ -60,7 +64,10 @@ package com.larryzzl.flex.remotekeynote.kre
 		
 		public function previous():void
 		{
+			if (isSlideAnimating == true) return;
 			
+			isWaittingForNextSlide = true;
+			if (keynote.previousSlide() == false) isWaittingForNextSlide = false;
 		}
 		
 		private function prepare():void
@@ -105,13 +112,14 @@ package com.larryzzl.flex.remotekeynote.kre
 				curSlide = keynote.getCurrentSlide();
 				nextSlide = keynote.getNextSlide();
 				
-				curSlideContainer.addChild(curSlide.renderResult);
-				if (nextSlide != null) nextSlideContainer.addChild(nextSlide.renderResult);
+				fillKeynoteContent(curSlideContainer, curSlide.renderResult);
+				if (nextSlide != null) fillKeynoteContent(nextSlideContainer, nextSlide.renderResult);
 			}
 		}
 		
 		private function startTransitionFade():void
 		{
+			isSlideAnimating = true;
 			nextSlideContainer.alpha = 0;
 			Tweener.addTween(nextSlideContainer, {alpha: 1, time: 2});
 			Tweener.addTween(curSlideContainer, {alpha: 0, time: 2, onComplete:keynoteTransitionEnd});
@@ -119,6 +127,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		
 		private function startTransitionSlide():void
 		{
+			isSlideAnimating = true;
 			nextSlideContainer.x = curSlideContainer.width;
 			Tweener.addTween(nextSlideContainer, {x: 0, time: 2, transition:Equations.easeOutQuart});
 			Tweener.addTween(curSlideContainer, {x: -curSlideContainer.width, time: 2, transition:Equations.easeOutQuart, onComplete:keynoteTransitionEnd});
@@ -126,6 +135,7 @@ package com.larryzzl.flex.remotekeynote.kre
 		
 		private function startTransitionSlide3d():void
 		{
+			isSlideAnimating = true;
 			startTransitionSlide();
 		}
 		
@@ -141,19 +151,53 @@ package com.larryzzl.flex.remotekeynote.kre
 			{
 				logger.fine("SLIDE END");
 			}
+			isSlideAnimating = false;
 		}
 		
 		private function swipSlides():void
 		{
 			// swip current & next slide
-			curSlideContainer.removeChild(curSlide.renderResult);
-			nextSlideContainer.removeChild(nextSlide.renderResult);
-			curSlideContainer.addChild(nextSlide.renderResult);
+			emptyContainer(curSlideContainer);
+			emptyContainer(nextSlideContainer);
+			fillKeynoteContent(curSlideContainer, nextSlide.renderResult);
 			
 			curSlideContainer.x = 0;
 			curSlideContainer.alpha = 1;
 			nextSlideContainer.x = 0;
 			nextSlideContainer.alpha = 1;
+		}
+		
+		private function fillKeynoteContent(container:UIComponent, keynoteContent:DisplayObject):void
+		{
+			container.addChild(keynoteContent);
+			
+			// fill content centered
+			if (keynoteContent.width / keynoteContent.height > container.width / container.height)
+			{
+				var s:Number = keynoteContent.width / container.width;
+				keynoteContent.width = container.width;
+				keynoteContent.height = keynoteContent.height / s;
+				
+				keynoteContent.x = 0;
+				keynoteContent.y = (container.height - keynoteContent.height) * 0.5;
+			}
+			else
+			{
+				s = keynoteContent.height / container.height;
+				keynoteContent.width = keynoteContent.width / s;
+				keynoteContent.height = container.height;
+				
+				keynoteContent.x = (container.width - keynoteContent.width) * 0.5;
+				keynoteContent.y = 0;
+			}
+		}
+		
+		private function emptyContainer(container:UIComponent):void
+		{
+			for (var i:int = 0; i < container.numChildren; ++i)
+			{
+				container.removeChildAt(0);
+			}
 		}
 	}
 }

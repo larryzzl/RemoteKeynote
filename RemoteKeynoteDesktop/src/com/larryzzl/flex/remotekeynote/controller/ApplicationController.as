@@ -5,11 +5,15 @@ package com.larryzzl.flex.remotekeynote.controller
 	import com.larryzzl.flex.remotekeynote.events.SlideEvent;
 	import com.larryzzl.flex.remotekeynote.model.AppConfiguration;
 	
+	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.NetStatusEvent;
 	import flash.net.GroupSpecifier;
 	import flash.net.NetConnection;
 	import flash.net.NetGroup;
+	import flash.utils.ByteArray;
+	
+	import mx.graphics.codec.PNGEncoder;
 
 	public class ApplicationController
 	{
@@ -56,6 +60,27 @@ package com.larryzzl.flex.remotekeynote.controller
 			eventCenter.addEventListener(SlideEvent.SEND_SLIDE_TEXT, onCommandSendText, false, 0, true);
 			eventCenter.addEventListener(SlideEvent.UPDATE_SLIDE_INFO, onCommandSlideUpdateInfo, false, 0, true);
 			eventCenter.addEventListener(SlideEvent.RESET_SLIDE, onCommandResetSlide, false, 0, true);
+			
+			eventCenter.addEventListener(SlideEvent.SLIDE_LOADED, onSlideLoaded, false, 0, true);
+		}
+		
+		protected function onSlideLoaded(event:SlideEvent):void
+		{
+			logger.fine("Send out data for index: " + event.slideIndex);
+			var b:BitmapData = new BitmapData(event.slide.renderResult.width, event.slide.renderResult.height);
+			b.draw(event.slide.renderResult);
+			var pngEncoder:PNGEncoder = new PNGEncoder;
+			var imgByteArray:ByteArray = pngEncoder.encode(b);
+			
+			var e:SlideEvent = new SlideEvent(SlideEvent.SEND_SLIDE_CONTENT);
+			e.slideIndex = event.slideIndex;
+			e.slideContent = imgByteArray;
+			eventCenter.dispatchEvent(e);
+			
+			var e1:SlideEvent = new SlideEvent(SlideEvent.SEND_SLIDE_TEXT);
+			e1.slideIndex = event.slideIndex;
+			e1.slideText = event.slide.notes;
+			eventCenter.dispatchEvent(e1);
 		}
 		
 		protected function onCommandResetSlide(event:SlideEvent):void

@@ -2,11 +2,14 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   width="1024" height="600" frameRate="30"
+					   width="1024" height="600" frameRate="60"
+					   currentState="normal"
+					   backgroundColor.fullscreen="0x000000"
+					   backgroundColor.normal="0xffffff"
+					   showStatusBar="false"
 					   creationComplete="onAppReady(event)">
 	<fx:Script>
 		<![CDATA[
-
 			import com.larryzzl.flex.remotekeynote.controller.ApplicationController;
 			import com.larryzzl.flex.remotekeynote.controller.Logger;
 			import com.larryzzl.flex.remotekeynote.events.ApplicationEvent;
@@ -15,6 +18,7 @@
 			import com.larryzzl.flex.remotekeynote.kre.Keynote;
 			import com.larryzzl.flex.remotekeynote.kre.KeynoteEvent;
 			import com.larryzzl.flex.remotekeynote.kre.KeynoteRenderEngine;
+			import com.larryzzl.flex.remotekeynote.kre.KeynoteSlide;
 			
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
@@ -32,6 +36,7 @@
 			
 			private var uc:UIComponent;
 			private var kre:KeynoteRenderEngine;
+			private var keynote:Keynote;
 			
 			protected function onAppReady(event:FlexEvent):void
 			{
@@ -40,17 +45,20 @@
 				eventCenter.addEventListener(ApplicationEvent.EXIT_APP, onExitApp, false, 0, true);
 				eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.SETUP_CONNECTION));
 				
+				// slide controller
+				eventCenter.addEventListener(SlideEvent.SLIDE_TO_NEXT, onNextSlide, false, 0, true);
+				eventCenter.addEventListener(SlideEvent.SLIDE_TO_PREVIOUS, onPreviousSlide, false, 0, true);
+				
+				// keynote container
 				uc = new UIComponent;
 				uc.percentHeight = 100;
 				uc.percentWidth = 100;
 				ca.addChild(uc);
-				
 			}
 			
 			protected function onClientConnected(event:Event):void
 			{
-				// TODO Auto-generated method stub
-				
+				logger.fine("CLIENT CONNECTED");
 			}
 			
 			protected function onExitApp(event:Event):void
@@ -91,11 +99,11 @@
 				eventCenter.dispatchEvent(new SlideEvent(SlideEvent.RESET_SLIDE));
 			}
 			
-			protected function onLoadKeynote(event:MouseEvent):void
+			protected function loadKeynote():void
 			{
 				// for test only
 				var url:String = "file:///D:/Personal/PersonalProject/GitHub/RemoteKeynote/RemoteKeynoteDesktop/bin-debug";
-				var keynote:Keynote = new Keynote(url);
+				keynote = new Keynote(url);
 				keynote.addEventListener(KeynoteEvent.KEYNOTE_STATE_CHANGE, onKeynoteStateChange);
 				
 				uc.width = ca.width;
@@ -109,6 +117,26 @@
 				f.browseForDirectory("Choose Keynote Directory");
 			}
 			
+			protected function onLoadFakeKeynote(event:MouseEvent):void
+			{
+				if (cbAutoFullscreen.selected == true)
+				{
+					//width = Capabilities.screenResolutionX;
+					//height = Capabilities.screenResolutionY;
+					
+					ca.percentWidth = 100;
+					ca.percentHeight = 100;
+					
+					// fullscreen handler
+					stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullscreenChange, false, 0, true);
+					stage.displayState = StageDisplayState.FULL_SCREEN_INTERACTIVE;
+				}
+				else
+				{
+					loadKeynote();
+				}
+			}
+			
 			protected function onDirSelect(event:Event):void
 			{
 				var f:File = event.target as File;
@@ -118,39 +146,94 @@
 			protected function onKeynoteStateChange(event:KeynoteEvent):void
 			{
 				logger.fine("onKeynoteStateChange: " + event.keynoteState);
+				if (event.keynoteState == Keynote.KEYNOTE_STATE_READY)
+				{
+
+				}
 			}
 			
-			protected function onNext(event:MouseEvent):void
+			protected function onNext():void
 			{
 				if (kre) kre.next();
 			}
 			
-			protected function onPrevious(event:MouseEvent):void
+			protected function onPrevious():void
 			{
 				if (kre) kre.previous();
 			}
 			
+			protected function onNextSlide(event:SlideEvent):void
+			{
+				if (kre) kre.next();
+			}
+			
+			protected function onPreviousSlide(event:SlideEvent):void
+			{
+				if (kre) kre.previous();
+			}
+			
+			protected function onFullscreenChange(event:FullScreenEvent):void
+			{
+				logger.fine("Fullscreen: " + event.fullScreen);
+				if (event.fullScreen == true)
+				{
+					currentState = "fullscreen";
+					loadKeynote();
+					inputCapture.setFocus();
+					inputCapture.addEventListener(KeyboardEvent.KEY_UP, onKeyUp, false, 0, true);
+				}
+				else
+				{
+					onExitApp(null);
+				}
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				switch (event.keyCode)
+				{
+					case Keyboard.LEFT:
+						onPrevious();
+						break;
+					
+					case Keyboard.RIGHT:
+						onNext();
+						break;
+				}
+			}
+			
 		]]>
 	</fx:Script>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="fullscreen"/>
+	</s:states>
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	
-	<s:List dataProvider="{logger.logs}" width="50%" height="50%"/>
+	<s:Group excludeFrom="fullscreen">
+		<s:List dataProvider="{logger.logs}" width="50%" height="50%"/>
+		
+		<s:BorderContainer id="fakeSlideContent" width="50%" height="50%" right="0" backgroundColor="0xff8000">
+			<s:layout>
+				<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
+			</s:layout>
+			<s:Label id="lbCount" color="#FFFFFF" fontSize="36" text="{fakeSlideCount}"/>
+		</s:BorderContainer>
+		
+		<s:Button x="531" y="322" width="113" height="72" label="Send Slide Init" click="onSendFakeInit(event)"/>
+		<s:Button x="650" y="321" width="115" height="72" label="Send Fake Data" click="onSendFakeData(event)" enabled="{fakeSlideCount != totalFakeCount}"/>
+		<s:Button x="773" y="321" width="73" height="72" label="Reset" click="onReset(event)"/>
+		<s:Button x="854" y="321" width="106" height="72" label="Load Keynote" click="onLoadFakeKeynote(event)"/>
+		<s:Button x="531" y="402" width="86" height="54" label="next" click="onNext()"/>
+		<s:Button x="625" y="401" width="92" height="55" label="previous" click="onPrevious()"/>
+		<s:CheckBox id="cbAutoFullscreen" x="531" y="464" label="Auto Fullscreen" selected="true"/>
+	</s:Group>
+
 	<s:SpriteVisualElement id="ca" bottom="0" width="50%" height="50%">
 	</s:SpriteVisualElement>
-	<s:BorderContainer id="fakeSlideContent" width="50%" height="50%" right="0" backgroundColor="0xff8000">
-		<s:layout>
-			<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
-		</s:layout>
-		<s:Label id="lbCount" color="#FFFFFF" fontSize="36" text="{fakeSlideCount}"/>
-	</s:BorderContainer>
 	
-	<s:Button x="531" y="322" width="113" height="72" label="Send Slide Init" click="onSendFakeInit(event)"/>
-	<s:Button x="650" y="321" width="115" height="72" label="Send Fake Data" click="onSendFakeData(event)" enabled="{fakeSlideCount != totalFakeCount}"/>
-	<s:Button x="773" y="321" width="73" height="72" label="Reset" click="onReset(event)"/>
-	<s:Button x="854" y="321" width="106" height="72" label="Load Keynote" click="onLoadKeynote(event)"/>
-	<s:Button x="531" y="402" width="86" height="54" label="next" click="onNext(event)"/>
-	<s:Button x="625" y="401" width="92" height="55" label="previous" click="onPrevious(event)"/>
-
+	<s:TextInput includeIn="fullscreen" id="inputCapture" visible="false"/>
+	
 </s:WindowedApplication>
