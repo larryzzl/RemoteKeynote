@@ -205,7 +205,24 @@ package com.larryzzl.flex.remotekeynote.controller
 						break;
 					
 					case "slideExit":
-						eventCenter.dispatchEvent(new SlideEvent(ApplicationEvent.EXIT_APP));
+						eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.EXIT_APP));
+						break;
+					
+					case "resetScalePosition":
+						eventCenter.dispatchEvent(new ApplicationEvent(ApplicationEvent.RESET_VISUAL_SLIDE));
+						break;
+					
+					case "zoom":
+						var e1:ApplicationEvent = new ApplicationEvent(ApplicationEvent.ZOOM_SLIDE);
+						e1.newScale = val.command.scale;
+						eventCenter.dispatchEvent(e1);
+						break;
+					
+					case "move":
+						var e2:ApplicationEvent = new ApplicationEvent(ApplicationEvent.MOVE_SLIDE);
+						e2.xOffset = val.command.xOffset;
+						e2.yOffset = val.command.yOffset;
+						eventCenter.dispatchEvent(e2);
 						break;
 				}
 			}

@@ -58,6 +58,28 @@ package com.larryzzl.flex.remotekeynote.controller
 			eventCenter.addEventListener(ApplicationEvent.COMMAND_SLIDE_NEXT, onCommandSlideNext, false, 0, true);
 			eventCenter.addEventListener(ApplicationEvent.COMMAND_SLIDE_PREVIOUS, onCommandSlidePrevious, false, 0, true);
 			eventCenter.addEventListener(ApplicationEvent.COMMAND_SLIDE_EXIT_APP, onCommandSlideExitApp, false, 0, true);
+			
+			eventCenter.addEventListener(ApplicationEvent.COMMAND_MOVE, onCommandMove, false, 0, true);
+			eventCenter.addEventListener(ApplicationEvent.COMMAND_ZOOM, onCommandZoom, false, 0, true);
+			eventCenter.addEventListener(ApplicationEvent.COMMAND_RESET_SCALE_POSITION, onCommandResetScalePosition, false, 0, true);
+		}
+		
+		protected function onCommandResetScalePosition(event:ApplicationEvent):void
+		{
+			logger.fine("Send command: ResetScalePosition");
+			sendMsg({command: {type: "resetScalePosition"}});
+		}
+		
+		protected function onCommandZoom(event:ApplicationEvent):void
+		{
+			logger.fine("Send command: Zoom", event.newScale);
+			sendMsg({command: {type: "zoom", scale: event.newScale}});
+		}
+		
+		protected function onCommandMove(event:ApplicationEvent):void
+		{
+			logger.fine("Send command: Move", event.xOffset, event.yOffset);
+			sendMsg({command: {type: "move", xOffset: event.xOffset, yOffset: event.yOffset}});
 		}
 		
 		protected function onSendHandShake(event:Event):void

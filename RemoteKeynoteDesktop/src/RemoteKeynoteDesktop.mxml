@@ -49,6 +49,10 @@
 				eventCenter.addEventListener(SlideEvent.SLIDE_TO_NEXT, onNextSlide, false, 0, true);
 				eventCenter.addEventListener(SlideEvent.SLIDE_TO_PREVIOUS, onPreviousSlide, false, 0, true);
 				
+				eventCenter.addEventListener(ApplicationEvent.MOVE_SLIDE, onMoveSlide, false, 0, true);
+				eventCenter.addEventListener(ApplicationEvent.ZOOM_SLIDE, onZoomSlide, false, 0, true);
+				eventCenter.addEventListener(ApplicationEvent.RESET_VISUAL_SLIDE, onResetVisualSlide, false, 0, true);
+				
 				// keynote container
 				uc = new UIComponent;
 				uc.percentHeight = 100;
@@ -202,6 +206,25 @@
 				}
 			}
 			
+			protected function onMoveSlide(event:ApplicationEvent):void
+			{
+				ca.x += event.xOffset;
+				ca.y += event.yOffset;
+			}
+			
+			protected function onZoomSlide(event:ApplicationEvent):void
+			{
+				ca.scaleX *= event.newScale;
+				ca.scaleY *= event.newScale;
+			}
+			
+			protected function onResetVisualSlide(event:ApplicationEvent):void
+			{
+				ca.scaleX = ca.scaleY = 1;
+				ca.x = 0;
+				ca.y = 0;
+			}
+			
 		]]>
 	</fx:Script>
 	<s:states>
@@ -231,7 +254,7 @@
 		<s:CheckBox id="cbAutoFullscreen" x="531" y="464" label="Auto Fullscreen" selected="true"/>
 	</s:Group>
 
-	<s:SpriteVisualElement id="ca" bottom="0" width="50%" height="50%">
+	<s:SpriteVisualElement id="ca" width="50%" height="50%">
 	</s:SpriteVisualElement>
 	
 	<s:TextInput includeIn="fullscreen" id="inputCapture" visible="false"/>

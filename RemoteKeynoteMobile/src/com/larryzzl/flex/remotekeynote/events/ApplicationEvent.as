@@ -10,6 +10,14 @@ package com.larryzzl.flex.remotekeynote.events
 		public static const COMMAND_SLIDE_PREVIOUS:String = "COMMAND_SLIDE_PREVIOUS";
 		public static const COMMAND_SLIDE_EXIT_APP:String = "COMMAND_SLIDE_EXIT_APP";
 		
+		public static const COMMAND_ZOOM:String = "COMMAND_ZOOM";
+		public static const COMMAND_RESET_SCALE_POSITION:String = "COMMAND_RESET_SCALE_POSITION";
+		public static const COMMAND_MOVE:String = "COMMAND_MOVE";
+		
+		public var newScale:Number = 1;
+		public var xOffset:Number = 0;
+		public var yOffset:Number = 0;
+		
 		public function ApplicationEvent(type:String)
 		{
 			super(type);
