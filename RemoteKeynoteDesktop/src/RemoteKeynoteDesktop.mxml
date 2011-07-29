@@ -57,7 +57,7 @@
 				uc = new UIComponent;
 				uc.percentHeight = 100;
 				uc.percentWidth = 100;
-				ca.addChild(uc);
+				ca.addElement(uc);
 			}
 			
 			protected function onClientConnected(event:Event):void
@@ -254,8 +254,7 @@
 		<s:CheckBox id="cbAutoFullscreen" x="531" y="464" label="Auto Fullscreen" selected="true"/>
 	</s:Group>
 
-	<s:SpriteVisualElement id="ca" width="50%" height="50%">
-	</s:SpriteVisualElement>
+	<s:Group id="ca" width="50%" height="50%"/>
 	
 	<s:TextInput includeIn="fullscreen" id="inputCapture" visible="false"/>
 	
